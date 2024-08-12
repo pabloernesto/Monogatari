@@ -2,6 +2,7 @@ export default class Typed {
 	constructor(element, config) {
 		config.typeSpeed = config.typeSpeed ?? 100;
 		this.speed = config.typeSpeed; // use default type speed
+		this.nextPause = null;
 		this.config = config;
 
 		this.el = typeof element === 'string'
@@ -71,21 +72,29 @@ export default class Typed {
 	}
 
 	executeAction(action) {
-		this.speed = 1000;
+		if (action.action == "speed") {
+			this.speed = action.n; // overwrites speed value permanently
+		} else if (action.action == "pause") {
+			this.nextPause = action.n // sets a wait time temporarily
+		}
+		
 	}
 
 	typewrite() {
 		if (this.actions[this.nodeCounter]) {
 			this.executeAction(this.actions[this.nodeCounter])
 		}
-
+		const waitTime = this.nextPause ?? this.speed;
+		if (this.nextPause) {
+			this.nextPause = null;
+		}
 		this.timeout = setTimeout(() => {
 			this.el.children[this.nodeCounter].style = "";
 			this.nodeCounter += 1;
 			if (this.nodeCounter < this.el.children.length) {
  				this.typewrite();
 			}
-		}, this.speed);
+		}, waitTime);
 	}
 
 	destroy() {
