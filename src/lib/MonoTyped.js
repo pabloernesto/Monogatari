@@ -1,14 +1,15 @@
 export default class Typed {
 	constructor(element, config) {
 		config.typeSpeed = config.typeSpeed ?? 100;
+		this.speed = config.typeSpeed; // use default type speed
 		this.config = config;
 
 		this.el = typeof element === 'string'
 			? document.querySelector(element)
 			: element;
 
-		this.curPos = 0;
-		this.setDisplay(element, config.strings[0]);
+		this.nodeCounter = 0;
+		this.setDisplay(this.el, config.strings[0]);
 		this.typewrite();
 	}
 
@@ -21,15 +22,21 @@ export default class Typed {
 		@param {string} curString
 	 */
 	setDisplay(element, curString) {
+		const [nodes, actions] = this.parseString(curString);
+		this.actions = actions;
+		element.replaceChildren(...nodes);
+	}
+
+	parseString(curString) {
 		let nodes = [];
 		let actions = [];
-		let visibleCharsSeenN = 0;
+		let nodeCounter = 0;
 
 		// Separate curString into text and action sections
 		//   eg: "{speed:10}hello {pause:1000}{speed:1000}world!"
 		//     -> [ '', '{speed:10}', 'hello ', '{pause:1000}', '', '{speed:1000}', 'world!' ]
 		// `(?:<pattern>)` is a non-capturing group, see https://devdocs.io/javascript/regular_expressions/non-capturing_group
-		const actionPattern = /\{(?:pause|speed):\d+\}/;
+		const actionPattern = /(\{(?:pause|speed):\d+\})/;
 		const sections = curString.split(actionPattern);
 
 		sections.forEach((section, i) => {
@@ -43,7 +50,7 @@ export default class Typed {
 					if (isWhite) {
 						node = textNode;
 					} else {
-						visibleCharsSeenN++;
+						nodeCounter++;
 						node = document.createElement('span');
 						node.append(textNode);
 						node.style.visibility = 'hidden';
@@ -52,25 +59,33 @@ export default class Typed {
 				}
 			// action section
 			} else {
+				// extract action and parameter
 				const match = /\{(?<action>pause|speed):(?<n>\d+)\}/.exec(section);
-				actions[visibleCharsSeenN] = {
+				actions[nodeCounter] = {
 					action: match.groups.action,
 					n: match.groups.n,
 				};
 			}
 		});
+		return [nodes, actions];
+	}
 
-		this.el.replaceChildren(...nodes);
+	executeAction(action) {
+		this.speed = 1000;
 	}
 
 	typewrite() {
+		if (this.actions[this.nodeCounter]) {
+			this.executeAction(this.actions[this.nodeCounter])
+		}
+
 		this.timeout = setTimeout(() => {
-			this.el.children[this.curPos].style = "";
-			this.curPos += 1;
-			if (this.curPos < this.el.children.length) {
+			this.el.children[this.nodeCounter].style = "";
+			this.nodeCounter += 1;
+			if (this.nodeCounter < this.el.children.length) {
  				this.typewrite();
 			}
-		}, this.config.typeSpeed);
+		}, this.speed);
 	}
 
 	destroy() {
