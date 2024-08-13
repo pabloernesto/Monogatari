@@ -73,7 +73,8 @@ export default class Typed {
 					}
 					nodes.push(node);
 				}
-				// action section
+				
+			// action section
 			} else {
 				// extract action and parameter
 				const match = /\{(?<action>pause|speed):(?<n>\d+)\}/.exec(section);
@@ -83,8 +84,8 @@ export default class Typed {
 				};
 			}
 		});
+		// Force length of 'actions' to equal nodeCounter
 		actions[nodeCounter-1] = actions[nodeCounter-1];
-
 		return [nodes, actions];
 	}
 
