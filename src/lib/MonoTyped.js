@@ -23,10 +23,23 @@ export default class Typed {
 		@param {string} curString
 	 */
 	setDisplay(element, curString) {
-		const [nodes, actions] = this.parseString(curString);
-		this.actions = actions;
-		element.replaceChildren(...nodes);
+		let newElement = document.createElement("div");
+		newElement.innerHTML = curString;
+		
+		let textNodes = getLeafNodes(newElement);
+		let edits = [];
+		for (const textNode of textNodes) {
+			const [nodes, actions] = this.parseString(textNode.textContent);
+			// this.actions.append(actions);
+
+			// overwrite the node with <span> text
+			textNode.replaceWith(...nodes);
+			//edits.push(() => textNode.replaceWith(...nodes));
+		}
+		element.replaceChildren(...newElement.childNodes);
 	}
+
+	
 
 	parseString(curString) {
 		let nodes = [];
@@ -81,9 +94,9 @@ export default class Typed {
 	}
 
 	typewrite() {
-		if (this.actions[this.nodeCounter]) {
-			this.executeAction(this.actions[this.nodeCounter])
-		}
+		//if (this.actions[this.nodeCounter]) {
+		//	this.executeAction(this.actions[this.nodeCounter])
+		//}
 		const waitTime = this.nextPause ?? this.speed;
 		if (this.nextPause) {
 			this.nextPause = null;
@@ -102,4 +115,21 @@ export default class Typed {
 		this.el.replaceChildren();
 		this.config.onDestroy(this);
 	}
+}
+
+function getLeafNodes(node) {
+    let leafNodes = [];
+
+    function traverse(currentNode) {
+        if (currentNode.childNodes.length === 0) {
+            // It's a leaf node (no child nodes)
+            leafNodes.push(currentNode);
+        } else {
+            // Recursively process child nodes
+            currentNode.childNodes.forEach(child => traverse(child));
+        }
+    }
+
+    traverse(node);
+    return leafNodes;
 }
