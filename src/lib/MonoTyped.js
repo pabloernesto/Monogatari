@@ -12,6 +12,8 @@ export default class Typed {
 		this.nodeCounter = 0;
 		this.setDisplay(this.el, config.strings[0]);
 		let spans = this.el.querySelectorAll("span");
+
+		this.config.preStringTyped(0, this);
 		this.typewrite(spans);
 	}
 
@@ -111,6 +113,8 @@ export default class Typed {
 			this.nodeCounter += 1;
 			if (this.nodeCounter < characters.length) {
 				this.typewrite(characters);
+			} else {
+				this.config.onStringTyped(0, this);
 			}
 		}, waitTime);
 	}
