@@ -11,7 +11,8 @@ export default class Typed {
 
 		this.nodeCounter = 0;
 		this.setDisplay(this.el, config.strings[0]);
-		this.typewrite();
+		let spans = this.el.querySelectorAll("span");
+		this.typewrite(spans);
 	}
 
 	get strings() {
@@ -25,26 +26,23 @@ export default class Typed {
 	setDisplay(element, curString) {
 		let newElement = document.createElement("div");
 		newElement.innerHTML = curString;
-		
 		let textNodes = getLeafNodes(newElement);
-		let edits = [];
+		this.actions = [];
 		for (const textNode of textNodes) {
 			const [nodes, actions] = this.parseString(textNode.textContent);
-			// this.actions.append(actions);
+			this.actions = this.actions.concat(...actions);
 
 			// overwrite the node with <span> text
 			textNode.replaceWith(...nodes);
 			//edits.push(() => textNode.replaceWith(...nodes));
 		}
+		console.log(this.actions);
 		element.replaceChildren(...newElement.childNodes);
 	}
 
-	
+
 
 	parseString(curString) {
-		let nodes = [];
-		let actions = [];
-		let nodeCounter = 0;
 
 		// Separate curString into text and action sections
 		//   eg: "{speed:10}hello {pause:1000}{speed:1000}world!"
@@ -52,6 +50,10 @@ export default class Typed {
 		// `(?:<pattern>)` is a non-capturing group, see https://devdocs.io/javascript/regular_expressions/non-capturing_group
 		const actionPattern = /(\{(?:pause|speed):\d+\})/;
 		const sections = curString.split(actionPattern);
+
+		let nodes = [];
+		let actions = [];
+		let nodeCounter = 0;
 
 		sections.forEach((section, i) => {
 			// text section
@@ -71,7 +73,7 @@ export default class Typed {
 					}
 					nodes.push(node);
 				}
-			// action section
+				// action section
 			} else {
 				// extract action and parameter
 				const match = /\{(?<action>pause|speed):(?<n>\d+)\}/.exec(section);
@@ -81,6 +83,8 @@ export default class Typed {
 				};
 			}
 		});
+		actions[nodeCounter-1] = actions[nodeCounter-1];
+
 		return [nodes, actions];
 	}
 
@@ -90,22 +94,22 @@ export default class Typed {
 		} else if (action.action == "pause") {
 			this.nextPause = action.n // sets a wait time temporarily
 		}
-		
+
 	}
 
-	typewrite() {
-		//if (this.actions[this.nodeCounter]) {
-		//	this.executeAction(this.actions[this.nodeCounter])
-		//}
+	typewrite(characters) {
+		if (this.actions[this.nodeCounter]) {
+			this.executeAction(this.actions[this.nodeCounter])
+		}
 		const waitTime = this.nextPause ?? this.speed;
 		if (this.nextPause) {
 			this.nextPause = null;
 		}
 		this.timeout = setTimeout(() => {
-			this.el.children[this.nodeCounter].style = "";
+			characters[this.nodeCounter].style = "";
 			this.nodeCounter += 1;
-			if (this.nodeCounter < this.el.children.length) {
- 				this.typewrite();
+			if (this.nodeCounter < characters.length) {
+				this.typewrite(characters);
 			}
 		}, waitTime);
 	}
@@ -118,18 +122,18 @@ export default class Typed {
 }
 
 function getLeafNodes(node) {
-    let leafNodes = [];
+	let leafNodes = [];
 
-    function traverse(currentNode) {
-        if (currentNode.childNodes.length === 0) {
-            // It's a leaf node (no child nodes)
-            leafNodes.push(currentNode);
-        } else {
-            // Recursively process child nodes
-            currentNode.childNodes.forEach(child => traverse(child));
-        }
-    }
+	function traverse(currentNode) {
+		if (currentNode.childNodes.length === 0) {
+			// It's a leaf node (no child nodes)
+			leafNodes.push(currentNode);
+		} else {
+			// Recursively process child nodes
+			currentNode.childNodes.forEach(child => traverse(child));
+		}
+	}
 
-    traverse(node);
-    return leafNodes;
+	traverse(node);
+	return leafNodes;
 }
